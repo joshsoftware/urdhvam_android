@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.josh.krishna.audioprocessing.soundfile;
+package com.joshsoftware.urdhvam.soundfile;
 
 class Atom {  // note: latest versions of spec simply call it 'box' instead of 'atom'.
     private int mSize;  // includes atom header (8 bytes)

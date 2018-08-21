@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.joshsoftware.urdhvam;
+package com.joshsoftware.urdhvam.customView;
 
 import java.nio.ShortBuffer;
 
@@ -22,9 +22,10 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 
-import com.josh.krishna.audioprocessing.soundfile.SoundFile;
+import com.joshsoftware.urdhvam.soundfile.SoundFile;
 
-class SamplePlayer {
+
+public class SamplePlayer {
     public interface OnCompletionListener {
         public void onCompletion();
     };

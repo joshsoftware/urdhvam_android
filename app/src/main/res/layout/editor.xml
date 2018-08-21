@@ -34,12 +34,12 @@
          android:scaleType="centerCrop"
          android:src="@drawable/bkgnd"-->
 
-        <com.joshsoftware.urdhvam.WaveformView
+        <com.joshsoftware.urdhvam.customView.WaveformView
             android:id="@+id/waveform"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent" />
 
-        <com.joshsoftware.urdhvam.MarkerView
+        <com.joshsoftware.urdhvam.customView.MarkerView
             android:id="@+id/startmarker"
             android:nextFocusDown="@+id/endmarker"
             android:layout_width="wrap_content"
@@ -47,7 +47,7 @@
             android:src="@drawable/marker_left"
             android:contentDescription="@string/start_marker" />
 
-        <com.joshsoftware.urdhvam.MarkerView
+        <com.joshsoftware.urdhvam.customView.MarkerView
             android:id="@+id/endmarker"
             android:nextFocusUp="@+id/startmarker"
             android:nextFocusDown="@+id/info"

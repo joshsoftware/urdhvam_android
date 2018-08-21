@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.joshsoftware.urdhvam;
+package com.joshsoftware.urdhvam.customView;
 
 import android.content.Context;
 import android.graphics.Canvas;

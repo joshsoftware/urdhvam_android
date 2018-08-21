@@ -1,6 +1,6 @@
 
 
-package com.joshsoftware.urdhvam;
+package com.joshsoftware.urdhvam.customView;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -14,7 +14,8 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 
-import com.josh.krishna.audioprocessing.soundfile.SoundFile;
+import com.joshsoftware.urdhvam.R;
+import com.joshsoftware.urdhvam.soundfile.SoundFile;
 
 /**
  * WaveformView is an Android view that displays a visual representation

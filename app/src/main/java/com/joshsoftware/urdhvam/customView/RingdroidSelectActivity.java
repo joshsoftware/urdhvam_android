@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.joshsoftware.urdhvam;
+package com.joshsoftware.urdhvam.customView;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -48,7 +48,8 @@ import android.widget.SearchView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
-import com.josh.krishna.audioprocessing.soundfile.SoundFile;
+import com.joshsoftware.urdhvam.R;
+import com.joshsoftware.urdhvam.soundfile.SoundFile;
 
 /**
  * Main screen that shows up when you launch Ringdroid. Handles selecting

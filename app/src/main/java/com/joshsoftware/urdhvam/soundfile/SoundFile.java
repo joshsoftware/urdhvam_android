@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.josh.krishna.audioprocessing.soundfile;
+package com.joshsoftware.urdhvam.soundfile;
 
 import java.io.BufferedWriter;
 import java.io.File;

@@ -1,6 +1,6 @@
 
 
-package com.joshsoftware.urdhvam;
+package com.joshsoftware.urdhvam.customView;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -34,14 +34,16 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.josh.krishna.audioprocessing.soundfile.SoundFile;
+import com.joshsoftware.urdhvam.R;
+import com.joshsoftware.urdhvam.soundfile.SoundFile;
+
 
 import java.io.File;
+import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
-import java.io.StringWriter;
 
-public class MainActivity extends AppCompatActivity
+public class RingdroidEditActivity extends AppCompatActivity
     implements MarkerView.MarkerListener,
                WaveformView.WaveformListener
 {
@@ -515,7 +517,7 @@ public class MainActivity extends AppCompatActivity
      */
     private void loadGui() {
         // Inflate our UI from its XML layout description.
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.editor);
         //getActionBar().setDisplayHomeAsUpEnabled(false);
        // getActionBar().setDisplayShowHomeEnabled(false);
         //getActionBar().setBackgroundDrawable(new ColorDrawable(Color.DKGRAY));
@@ -600,7 +602,7 @@ public class MainActivity extends AppCompatActivity
         mLoadingLastUpdateTime = getCurrentTime();
         mLoadingKeepGoing = true;
         mFinishActivity = false;
-        mProgressDialog = new ProgressDialog(MainActivity.this);
+        mProgressDialog = new ProgressDialog(RingdroidEditActivity.this);
         mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         mProgressDialog.setTitle(R.string.progress_dialog_loading);
         mProgressDialog.setCancelable(true);
@@ -682,7 +684,7 @@ public class MainActivity extends AppCompatActivity
                     };
                     mHandler.post(runnable);
                 } else if (mFinishActivity){
-                    MainActivity.this.finish();
+                    RingdroidEditActivity.this.finish();
                 }
             }
         };
@@ -697,7 +699,7 @@ public class MainActivity extends AppCompatActivity
         mRecordingLastUpdateTime = getCurrentTime();
         mRecordingKeepGoing = true;
         mFinishActivity = false;
-        AlertDialog.Builder adBuilder = new AlertDialog.Builder(MainActivity.this);
+        AlertDialog.Builder adBuilder = new AlertDialog.Builder(RingdroidEditActivity.this);
         adBuilder.setTitle(getResources().getText(R.string.progress_dialog_recording));
         adBuilder.setCancelable(true);
         adBuilder.setNegativeButton(
@@ -781,7 +783,7 @@ public class MainActivity extends AppCompatActivity
                 }
                 mAlertDialog.dismiss();
                 if (mFinishActivity){
-                    MainActivity.this.finish();
+                    RingdroidEditActivity.this.finish();
                 } else {
                     Runnable runnable = new Runnable() {
                         public void run() {
@@ -1113,7 +1115,7 @@ public class MainActivity extends AppCompatActivity
             title = getResources().getText(R.string.alert_title_success);
         }
 
-        new AlertDialog.Builder(MainActivity.this)
+        new AlertDialog.Builder(RingdroidEditActivity.this)
             .setTitle(title)
             .setMessage(message)
             .setPositiveButton(
@@ -1420,7 +1422,7 @@ public class MainActivity extends AppCompatActivity
         // If it's a notification, give the user the option of making
         // this their default notification.  If they say no, we're finished.
         if (mNewFileKind == FileSaveDialog.FILE_KIND_NOTIFICATION) {
-            new AlertDialog.Builder(MainActivity.this)
+            new AlertDialog.Builder(RingdroidEditActivity.this)
                 .setTitle(R.string.alert_title_success)
                 .setMessage(R.string.set_default_notification)
                 .setPositiveButton(R.string.alert_yes_button,
@@ -1428,7 +1430,7 @@ public class MainActivity extends AppCompatActivity
                         public void onClick(DialogInterface dialog,
                                             int whichButton) {
                             RingtoneManager.setActualDefaultRingtoneUri(
-                                MainActivity.this,
+                                RingdroidEditActivity.this,
                                 RingtoneManager.TYPE_NOTIFICATION,
                                 newUri);
                             finish();
@@ -1456,11 +1458,11 @@ public class MainActivity extends AppCompatActivity
                     switch (actionId) {
                     case R.id.button_make_default:
                         RingtoneManager.setActualDefaultRingtoneUri(
-                            MainActivity.this,
+                            RingdroidEditActivity.this,
                             RingtoneManager.TYPE_RINGTONE,
                             newUri);
                         Toast.makeText(
-                            MainActivity.this,
+                            RingdroidEditActivity.this,
                             R.string.default_ringtone_success_message,
                             Toast.LENGTH_SHORT)
                             .show();

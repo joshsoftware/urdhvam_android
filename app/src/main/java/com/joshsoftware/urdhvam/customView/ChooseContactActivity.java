@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.joshsoftware.urdhvam;
+package com.joshsoftware.urdhvam.customView;
 
 import android.app.ListActivity;
 import android.app.LoaderManager;
@@ -35,6 +35,8 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.joshsoftware.urdhvam.R;
 
 
 /**

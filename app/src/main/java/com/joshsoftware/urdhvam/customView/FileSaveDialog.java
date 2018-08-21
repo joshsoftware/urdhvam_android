@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.joshsoftware.urdhvam;
+package com.joshsoftware.urdhvam.customView;
 
 import java.util.ArrayList;
 
@@ -29,6 +29,8 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+
+import com.joshsoftware.urdhvam.R;
 
 
 public class FileSaveDialog extends Dialog {

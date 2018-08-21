@@ -1,7 +1,6 @@
+package com.joshsoftware.urdhvam.activity;
 
-
-package com.joshsoftware.urdhvam;
-
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -10,8 +9,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -19,6 +16,8 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -30,25 +29,40 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.josh.krishna.audioprocessing.soundfile.SoundFile;
-
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
+import com.joshsoftware.urdhvam.aws.AWSConstants;
+import com.joshsoftware.urdhvam.aws.AWSUtil;
+import com.joshsoftware.urdhvam.customView.FileSaveDialog;
+import com.joshsoftware.urdhvam.customView.MarkerView;
+import com.joshsoftware.urdhvam.R;
+import com.joshsoftware.urdhvam.customView.SamplePlayer;
+import com.joshsoftware.urdhvam.customView.WaveformView;
+import com.joshsoftware.urdhvam.soundfile.SoundFile;
+import com.joshsoftware.urdhvam.utils.AppUtils;
+import com.joshsoftware.urdhvam.utils.MyRuntimePermission;
 
 import java.io.File;
-import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
+import java.io.StringWriter;
 
-public class RingdroidEditActivity extends AppCompatActivity
-    implements MarkerView.MarkerListener,
-               WaveformView.WaveformListener
-{
+public class MainActivity extends AppCompatActivity implements MarkerView.MarkerListener,
+        WaveformView.WaveformListener{
+    private static final String TAG = MainActivity.class.getSimpleName();
+    private String imageURL = "";
+    private TransferUtility transferUtility;
+    //private File audioFile;
+
     private long mLoadingLastUpdateTime;
     private boolean mLoadingKeepGoing;
     private long mRecordingLastUpdateTime;
@@ -519,7 +533,7 @@ public class RingdroidEditActivity extends AppCompatActivity
      */
     private void loadGui() {
         // Inflate our UI from its XML layout description.
-        setContentView(R.layout.editor);
+        setContentView(R.layout.activity_main);
         //getActionBar().setDisplayHomeAsUpEnabled(false);
        // getActionBar().setDisplayShowHomeEnabled(false);
         //getActionBar().setBackgroundDrawable(new ColorDrawable(Color.DKGRAY));
@@ -587,111 +601,111 @@ public class RingdroidEditActivity extends AppCompatActivity
         updateDisplay();
     }
 
-    private void loadFromFile() {
-        mFile = new File(mFilename);
-
-        SongMetadataReader metadataReader = new SongMetadataReader(
-            this, mFilename);
-        mTitle = metadataReader.mTitle;
-        mArtist = metadataReader.mArtist;
-
-        String titleLabel = mTitle;
-        if (mArtist != null && mArtist.length() > 0) {
-            titleLabel += " - " + mArtist;
-        }
-        setTitle(titleLabel);
-
-        mLoadingLastUpdateTime = getCurrentTime();
-        mLoadingKeepGoing = true;
-        mFinishActivity = false;
-        mProgressDialog = new ProgressDialog(RingdroidEditActivity.this);
-        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        mProgressDialog.setTitle(R.string.progress_dialog_loading);
-        mProgressDialog.setCancelable(true);
-        mProgressDialog.setOnCancelListener(
-            new DialogInterface.OnCancelListener() {
-                public void onCancel(DialogInterface dialog) {
-                    mLoadingKeepGoing = false;
-                    mFinishActivity = true;
-                }
-            });
-        mProgressDialog.show();
-
-        final SoundFile.ProgressListener listener =
-            new SoundFile.ProgressListener() {
-                public boolean reportProgress(double fractionComplete) {
-                    long now = getCurrentTime();
-                    if (now - mLoadingLastUpdateTime > 100) {
-                        mProgressDialog.setProgress(
-                                (int) (mProgressDialog.getMax() * fractionComplete));
-                        mLoadingLastUpdateTime = now;
-                    }
-                    return mLoadingKeepGoing;
-                }
-            };
-
-        // Load the sound file in a background thread
-        mLoadSoundFileThread = new Thread() {
-            public void run() {
-                try {
-                    mSoundFile = SoundFile.create(mFile.getAbsolutePath(), listener);
-
-                    if (mSoundFile == null) {
-                        mProgressDialog.dismiss();
-                        String name = mFile.getName().toLowerCase();
-                        String[] components = name.split("\\.");
-                        String err;
-                        if (components.length < 2) {
-                            err = getResources().getString(
-                                R.string.no_extension_error);
-                        } else {
-                            err = getResources().getString(
-                                R.string.bad_extension_error) + " " +
-                                components[components.length - 1];
-                        }
-                        final String finalErr = err;
-                        Runnable runnable = new Runnable() {
-                            public void run() {
-                                showFinalAlert(new Exception(), finalErr);
-                            }
-                        };
-                        mHandler.post(runnable);
-                        return;
-                    }
-                    mPlayer = new SamplePlayer(mSoundFile);
-                } catch (final Exception e) {
-                    mProgressDialog.dismiss();
-                    e.printStackTrace();
-                    mInfoContent = e.toString();
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                            mInfo.setText(mInfoContent);
-                        }
-                    });
-
-                    Runnable runnable = new Runnable() {
-                        public void run() {
-                            showFinalAlert(e, getResources().getText(R.string.read_error));
-                        }
-                    };
-                    mHandler.post(runnable);
-                    return;
-                }
-                mProgressDialog.dismiss();
-                if (mLoadingKeepGoing) {
-                    Runnable runnable = new Runnable() {
-                        public void run() {
-                            finishOpeningSoundFile();
-                        }
-                    };
-                    mHandler.post(runnable);
-                } else if (mFinishActivity){
-                    RingdroidEditActivity.this.finish();
-                }
-            }
-        };
-        mLoadSoundFileThread.start();
-    }
+//    private void loadFromFile() {
+//        mFile = new File(mFilename);
+//
+//        SongMetadataReader metadataReader = new SongMetadataReader(
+//            this, mFilename);
+//        mTitle = metadataReader.mTitle;
+//        mArtist = metadataReader.mArtist;
+//
+//        String titleLabel = mTitle;
+//        if (mArtist != null && mArtist.length() > 0) {
+//            titleLabel += " - " + mArtist;
+//        }
+//        setTitle(titleLabel);
+//
+//        mLoadingLastUpdateTime = getCurrentTime();
+//        mLoadingKeepGoing = true;
+//        mFinishActivity = false;
+//        mProgressDialog = new ProgressDialog(MainActivity.this);
+//        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+//        mProgressDialog.setTitle(R.string.progress_dialog_loading);
+//        mProgressDialog.setCancelable(true);
+//        mProgressDialog.setOnCancelListener(
+//            new DialogInterface.OnCancelListener() {
+//                public void onCancel(DialogInterface dialog) {
+//                    mLoadingKeepGoing = false;
+//                    mFinishActivity = true;
+//                }
+//            });
+//        mProgressDialog.show();
+//
+//        final SoundFile.ProgressListener listener =
+//            new SoundFile.ProgressListener() {
+//                public boolean reportProgress(double fractionComplete) {
+//                    long now = getCurrentTime();
+//                    if (now - mLoadingLastUpdateTime > 100) {
+//                        mProgressDialog.setProgress(
+//                                (int) (mProgressDialog.getMax() * fractionComplete));
+//                        mLoadingLastUpdateTime = now;
+//                    }
+//                    return mLoadingKeepGoing;
+//                }
+//            };
+//
+//        // Load the sound file in a background thread
+//        mLoadSoundFileThread = new Thread() {
+//            public void run() {
+//                try {
+//                    mSoundFile = SoundFile.create(mFile.getAbsolutePath(), listener);
+//
+//                    if (mSoundFile == null) {
+//                        mProgressDialog.dismiss();
+//                        String name = mFile.getName().toLowerCase();
+//                        String[] components = name.split("\\.");
+//                        String err;
+//                        if (components.length < 2) {
+//                            err = getResources().getString(
+//                                R.string.no_extension_error);
+//                        } else {
+//                            err = getResources().getString(
+//                                R.string.bad_extension_error) + " " +
+//                                components[components.length - 1];
+//                        }
+//                        final String finalErr = err;
+//                        Runnable runnable = new Runnable() {
+//                            public void run() {
+//                                showFinalAlert(new Exception(), finalErr);
+//                            }
+//                        };
+//                        mHandler.post(runnable);
+//                        return;
+//                    }
+//                    mPlayer = new SamplePlayer(mSoundFile);
+//                } catch (final Exception e) {
+//                    mProgressDialog.dismiss();
+//                    e.printStackTrace();
+//                    mInfoContent = e.toString();
+//                    runOnUiThread(new Runnable() {
+//                        public void run() {
+//                            mInfo.setText(mInfoContent);
+//                        }
+//                    });
+//
+//                    Runnable runnable = new Runnable() {
+//                        public void run() {
+//                            showFinalAlert(e, getResources().getText(R.string.read_error));
+//                        }
+//                    };
+//                    mHandler.post(runnable);
+//                    return;
+//                }
+//                mProgressDialog.dismiss();
+//                if (mLoadingKeepGoing) {
+//                    Runnable runnable = new Runnable() {
+//                        public void run() {
+//                            finishOpeningSoundFile();
+//                        }
+//                    };
+//                    mHandler.post(runnable);
+//                } else if (mFinishActivity){
+//                    MainActivity.this.finish();
+//                }
+//            }
+//        };
+//        mLoadSoundFileThread.start();
+//    }
 
     private void recordAudio() {
         mFile = null;
@@ -701,19 +715,17 @@ public class RingdroidEditActivity extends AppCompatActivity
         mRecordingLastUpdateTime = getCurrentTime();
         mRecordingKeepGoing = true;
         mFinishActivity = false;
-        AlertDialog.Builder adBuilder = new AlertDialog.Builder(RingdroidEditActivity.this);
+        AlertDialog.Builder adBuilder = new AlertDialog.Builder(MainActivity.this);
         adBuilder.setTitle(getResources().getText(R.string.progress_dialog_recording));
         adBuilder.setCancelable(true);
         adBuilder.setNegativeButton(
-            getResources().getText(R.string.progress_dialog_cancel),
-            new DialogInterface.OnClickListener() {
+            getResources().getText(R.string.progress_dialog_cancel),new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
                     mRecordingKeepGoing = false;
                     mFinishActivity = true;
                 }
             });
-        adBuilder.setPositiveButton(
-            getResources().getText(R.string.progress_dialog_stop),
+        adBuilder.setPositiveButton(getResources().getText(R.string.progress_dialog_stop),
             new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
                     mRecordingKeepGoing = false;
@@ -785,7 +797,7 @@ public class RingdroidEditActivity extends AppCompatActivity
                 }
                 mAlertDialog.dismiss();
                 if (mFinishActivity){
-                    RingdroidEditActivity.this.finish();
+                    MainActivity.this.finish();
                 } else {
                     Runnable runnable = new Runnable() {
                         public void run() {
@@ -1117,7 +1129,7 @@ public class RingdroidEditActivity extends AppCompatActivity
             title = getResources().getText(R.string.alert_title_success);
         }
 
-        new AlertDialog.Builder(RingdroidEditActivity.this)
+        new AlertDialog.Builder(MainActivity.this)
             .setTitle(title)
             .setMessage(message)
             .setPositiveButton(
@@ -1149,15 +1161,15 @@ public class RingdroidEditActivity extends AppCompatActivity
             // Environment.DIRECTORY_MUSIC).getPath() instead
             subdir = "media/audio/music/";
             break;
-        case FileSaveDialog.FILE_KIND_ALARM:
-            subdir = "media/audio/alarms/";
-            break;
-        case FileSaveDialog.FILE_KIND_NOTIFICATION:
-            subdir = "media/audio/notifications/";
-            break;
-        case FileSaveDialog.FILE_KIND_RINGTONE:
-            subdir = "media/audio/ringtones/";
-            break;
+//        case FileSaveDialog.FILE_KIND_ALARM:
+//            subdir = "media/audio/alarms/";
+//            break;
+//        case FileSaveDialog.FILE_KIND_NOTIFICATION:
+//            subdir = "media/audio/notifications/";
+//            break;
+//        case FileSaveDialog.FILE_KIND_RINGTONE:
+//            subdir = "media/audio/ringtones/";
+//            break;
         }
         String parentdir = externalRootDir + subdir;
 
@@ -1334,155 +1346,12 @@ public class RingdroidEditActivity extends AppCompatActivity
                         return;
                     }
 
+                    beginUpload(outPath);
                     mProgressDialog.dismiss();
-
-                /*final String finalOutPath = outPath;
-                Runnable runnable = new Runnable() {
-                        public void run() {
-                            afterSavingRingtone(title,
-                                                finalOutPath,
-                                                duration);
-                        }
-                    };
-                mHandler.post(runnable);*/
                 }
             };
             mSaveSoundFileThread.start();
 
-    }
-
-    private void afterSavingRingtone(CharSequence title,
-                                     String outPath,
-                                     int duration) {
-        File outFile = new File(outPath);
-        long fileSize = outFile.length();
-        if (fileSize <= 512) {
-            outFile.delete();
-            new AlertDialog.Builder(this)
-                .setTitle(R.string.alert_title_failure)
-                .setMessage(R.string.too_small_error)
-                .setPositiveButton(R.string.alert_ok_button, null)
-                .setCancelable(false)
-                .show();
-            return;
-        }
-
-        // Create the database record, pointing to the existing file path
-        String mimeType;
-        if (outPath.endsWith(".m4a")) {
-            mimeType = "audio/mp4a-latm";
-        } else if (outPath.endsWith(".wav")) {
-            mimeType = "audio/wav";
-        } else {
-            // This should never happen.
-            mimeType = "audio/mpeg";
-        }
-
-        String artist = "" + getResources().getText(R.string.artist_name);
-
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.MediaColumns.DATA, outPath);
-        values.put(MediaStore.MediaColumns.TITLE, title.toString());
-        values.put(MediaStore.MediaColumns.SIZE, fileSize);
-        values.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
-
-        values.put(MediaStore.Audio.Media.ARTIST, artist);
-        values.put(MediaStore.Audio.Media.DURATION, duration);
-
-        values.put(MediaStore.Audio.Media.IS_RINGTONE,
-                   mNewFileKind == FileSaveDialog.FILE_KIND_RINGTONE);
-        values.put(MediaStore.Audio.Media.IS_NOTIFICATION,
-                   mNewFileKind == FileSaveDialog.FILE_KIND_NOTIFICATION);
-        values.put(MediaStore.Audio.Media.IS_ALARM,
-                   mNewFileKind == FileSaveDialog.FILE_KIND_ALARM);
-        values.put(MediaStore.Audio.Media.IS_MUSIC,
-                   mNewFileKind == FileSaveDialog.FILE_KIND_MUSIC);
-
-        // Insert it into the database
-        Uri uri = MediaStore.Audio.Media.getContentUriForPath(outPath);
-        final Uri newUri = getContentResolver().insert(uri, values);
-        setResult(RESULT_OK, new Intent().setData(newUri));
-
-        // If Ringdroid was launched to get content, just return
-        if (mWasGetContentIntent) {
-            finish();
-            return;
-        }
-
-        // There's nothing more to do with music or an alarm.  Show a
-        // success message and then quit.
-        if (mNewFileKind == FileSaveDialog.FILE_KIND_MUSIC ||
-            mNewFileKind == FileSaveDialog.FILE_KIND_ALARM) {
-            Toast.makeText(this,
-                           R.string.save_success_message,
-                           Toast.LENGTH_SHORT)
-                .show();
-            finish();
-            return;
-        }
-
-        // If it's a notification, give the user the option of making
-        // this their default notification.  If they say no, we're finished.
-        if (mNewFileKind == FileSaveDialog.FILE_KIND_NOTIFICATION) {
-            new AlertDialog.Builder(RingdroidEditActivity.this)
-                .setTitle(R.string.alert_title_success)
-                .setMessage(R.string.set_default_notification)
-                .setPositiveButton(R.string.alert_yes_button,
-                    new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog,
-                                            int whichButton) {
-                            RingtoneManager.setActualDefaultRingtoneUri(
-                                RingdroidEditActivity.this,
-                                RingtoneManager.TYPE_NOTIFICATION,
-                                newUri);
-                            finish();
-                        }
-                    })
-                .setNegativeButton(
-                    R.string.alert_no_button,
-                    new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int whichButton) {
-                            finish();
-                        }
-                    })
-                .setCancelable(false)
-                .show();
-            return;
-        }
-
-        // If we get here, that means the type is a ringtone.  There are
-        // three choices: make this your default ringtone, assign it to a
-        // contact, or do nothing.
-
-        final Handler handler = new Handler() {
-                public void handleMessage(Message response) {
-                    int actionId = response.arg1;
-                    switch (actionId) {
-                    case R.id.button_make_default:
-                        RingtoneManager.setActualDefaultRingtoneUri(
-                            RingdroidEditActivity.this,
-                            RingtoneManager.TYPE_RINGTONE,
-                            newUri);
-                        Toast.makeText(
-                            RingdroidEditActivity.this,
-                            R.string.default_ringtone_success_message,
-                            Toast.LENGTH_SHORT)
-                            .show();
-                        finish();
-                        break;
-                    case R.id.button_choose_contact:
-                        chooseContactForRingtone(newUri);
-                        break;
-                    default:
-                    case R.id.button_do_nothing:
-                        finish();
-                        break;
-                    }
-                }
-            };
-//        Message message = Message.obtain(handler);
-//        AfterSaveActionDialog dlog = new AfterSaveActionDialog(this, message);
-//        dlog.show();
     }
 
     private void chooseContactForRingtone(Uri uri) {
@@ -1503,20 +1372,15 @@ public class RingdroidEditActivity extends AppCompatActivity
         }
 
         mNewFileKind = FileSaveDialog.FILE_KIND_MUSIC;
-        saveRingtone("MyMusics");
+        int timeName = (int) System.currentTimeMillis();
+        int tempFileName = Math.abs(timeName);
 
-
-        /*final Handler handler = new Handler() {
-                public void handleMessage(Message response) {
-                    CharSequence newTitle = (CharSequence)response.obj;
-                    mNewFileKind = response.arg1;
-                    saveRingtone(newTitle);
-                }1
-            };
-        Message message = Message.obtain(handler);
-        FileSaveDialog dlog = new FileSaveDialog(
-            this, getResources(), mTitle, message);
-        dlog.show();*/
+        if (ActivityCompat.checkSelfPermission(MainActivity.this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            saveRingtone(""+tempFileName);
+        } else {
+            new MyRuntimePermission(MainActivity.this).checkPermissionForExternalStorage();
+        }
     }
 
     private OnClickListener mPlayListener = new OnClickListener() {
@@ -1623,7 +1487,6 @@ public class RingdroidEditActivity extends AppCompatActivity
     }
 
 
-
 //    private void saveData() {
 //        final CharSequence title ="krishna";
 //        double startTime = mWaveformView.pixelsToSeconds(mStartPos);
@@ -1719,4 +1582,65 @@ public class RingdroidEditActivity extends AppCompatActivity
 //        };
 //        mSaveSoundFileThread.start();
 //    }
+
+    private void beginUpload(String filePath) {
+        if (filePath == null) {
+            Toast.makeText(this, "Could not find the filepath of the selected file", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        System.out.println("file path>>"+filePath);
+        //showActivitySpinner();
+//        File file = new File(filePath);
+//        audioFile = file;
+//
+//        transferUtility = AWSUtil.getTransferUtility(this);
+//
+//        TransferObserver observer = transferUtility.upload(AWSConstants.BUCKET_NAME_PRODUCTION,
+//                AWSConstants.DOCUMENT_PATH+file.getName(),
+//                file, CannedAccessControlList.PublicRead);
+//        observer.setTransferListener(new UploadListener());
+    }
+
+    private class UploadListener implements TransferListener {
+
+        @Override
+        public void onError(int id, Exception e) {
+            //dismissActivitySpinner();
+            Log.e(TAG, "Error during upload: " + id, e);
+        }
+
+        @Override
+        public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+            Log.d(TAG, String.format("onProgressChanged: %d, total: %d, current: %d", id, bytesTotal, bytesCurrent));
+        }
+
+        @Override
+        public void onStateChanged(int id, TransferState newState) {
+            Log.d(TAG, "onStateChanged: " + id + ", " + newState);
+            if (newState == TransferState.COMPLETED) {
+                AppUtils.showLongToastMessage(MainActivity.this,"File uploaded successfully");
+                //dismissActivitySpinner();
+//                imageURL = AWSConstants.S3_URL + AWSConstants.BUCKET_NAME_PRODUCTION + "/" +AWSConstants.DOCUMENT_PATH+audioFile.getName();
+//                Log.d("URL :::: " , imageURL);
+//                if(imageURL != null && imageURL.length() > 0){
+//                    //saveRecordToDB(imageURL);
+//                    AppUtils.showLongToastMessage(MainActivity.this,"File uploaded successfully");
+//
+//                }
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1) {
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                onSave();
+            }
+        }
+    }
+
+
 }
