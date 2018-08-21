@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements MarkerView.Marker
     private static final String TAG = MainActivity.class.getSimpleName();
     private String imageURL = "";
     private TransferUtility transferUtility;
-    //private File audioFile;
+    private File audioFile;
 
     private long mLoadingLastUpdateTime;
     private boolean mLoadingKeepGoing;
@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements MarkerView.Marker
     private TextView mEndText;
     private TextView mInfo;
     private String mInfoContent;
-    private ImageButton mPlayButton;
+    private ImageView mPlayButton;
     private ImageButton mRewindButton;
     private ImageButton mFfwdButton;
     private ImageView btn_record;
@@ -551,7 +551,7 @@ public class MainActivity extends AppCompatActivity implements MarkerView.Marker
         mEndText = (TextView)findViewById(R.id.endtext);
         mEndText.addTextChangedListener(mTextWatcher);
 
-        mPlayButton = (ImageButton)findViewById(R.id.play);
+        mPlayButton = (ImageView)findViewById(R.id.play);
         mPlayButton.setOnClickListener(mPlayListener);
         mRewindButton = (ImageButton)findViewById(R.id.rew);
         mRewindButton.setOnClickListener(mRewindListener);
@@ -1347,7 +1347,7 @@ public class MainActivity extends AppCompatActivity implements MarkerView.Marker
                     }
 
                     beginUpload(outPath);
-                    mProgressDialog.dismiss();
+                    //mProgressDialog.dismiss();
                 }
             };
             mSaveSoundFileThread.start();
@@ -1584,6 +1584,7 @@ public class MainActivity extends AppCompatActivity implements MarkerView.Marker
 //    }
 
     private void beginUpload(String filePath) {
+        //filePath="/storage/emulated/0/media/audio/music/JPEG_20180707_175932_1391914899.jpg";
         if (filePath == null) {
             Toast.makeText(this, "Could not find the filepath of the selected file", Toast.LENGTH_LONG).show();
             return;
@@ -1591,15 +1592,15 @@ public class MainActivity extends AppCompatActivity implements MarkerView.Marker
 
         System.out.println("file path>>"+filePath);
         //showActivitySpinner();
-//        File file = new File(filePath);
-//        audioFile = file;
-//
-//        transferUtility = AWSUtil.getTransferUtility(this);
-//
-//        TransferObserver observer = transferUtility.upload(AWSConstants.BUCKET_NAME_PRODUCTION,
-//                AWSConstants.DOCUMENT_PATH+file.getName(),
-//                file, CannedAccessControlList.PublicRead);
-//        observer.setTransferListener(new UploadListener());
+        File file = new File(filePath);
+        audioFile = file;
+
+        transferUtility = AWSUtil.getTransferUtility(this);
+
+        TransferObserver observer = transferUtility.upload(AWSConstants.BUCKET_NAME_PRODUCTION,
+                AWSConstants.FOLDER_AUDIO+file.getName(),
+                file, CannedAccessControlList.PublicRead);
+        observer.setTransferListener(new UploadListener());
     }
 
     private class UploadListener implements TransferListener {
@@ -1607,6 +1608,9 @@ public class MainActivity extends AppCompatActivity implements MarkerView.Marker
         @Override
         public void onError(int id, Exception e) {
             //dismissActivitySpinner();
+            if(mProgressDialog != null){
+                mProgressDialog.dismiss();
+            }
             Log.e(TAG, "Error during upload: " + id, e);
         }
 
@@ -1620,9 +1624,12 @@ public class MainActivity extends AppCompatActivity implements MarkerView.Marker
             Log.d(TAG, "onStateChanged: " + id + ", " + newState);
             if (newState == TransferState.COMPLETED) {
                 AppUtils.showLongToastMessage(MainActivity.this,"File uploaded successfully");
+                if(mProgressDialog != null){
+                    mProgressDialog.dismiss();
+                }
                 //dismissActivitySpinner();
-//                imageURL = AWSConstants.S3_URL + AWSConstants.BUCKET_NAME_PRODUCTION + "/" +AWSConstants.DOCUMENT_PATH+audioFile.getName();
-//                Log.d("URL :::: " , imageURL);
+                imageURL = AWSConstants.S3_URL + AWSConstants.BUCKET_NAME_PRODUCTION + "/" +AWSConstants.FOLDER_AUDIO+audioFile.getName();
+                Log.d("URL :::: " , imageURL);
 //                if(imageURL != null && imageURL.length() > 0){
 //                    //saveRecordToDB(imageURL);
 //                    AppUtils.showLongToastMessage(MainActivity.this,"File uploaded successfully");

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#696969</color>
-    <color name="colorPrimaryDark">#A9A9A9</color>
+    <color name="colorPrimary">#1565c0</color>
+    <color name="colorPrimaryDark">#1976d2</color>
     <color name="colorAccent">#FF4081</color>
 
     <color name="waveform_selected">#33b5e5</color>
@@ -19,4 +19,6 @@
     <color name="type_bkgnd_music">#88000000</color>
     <color name="type_bkgnd_unsupported">#88cccccc</color>
     <color name="black">#000000</color>
+    <color name="red">#d50000</color>
+
 </resources>
