@@ -21,6 +21,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.joshsoftware.urdhvam.R;
+import com.joshsoftware.urdhvam.activity.MainActivity;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -74,23 +75,21 @@ public class AppUtils {
         return arr;
     }
 
-//    public static boolean isNetWorkAvailable() {
+//    public static boolean isNetWorkAvailable(Context context) {
 //        return isNetWorkAvailable(true);
 //    }
-//
-//    private static boolean isNetWorkAvailable(boolean showMessage) {
-//        ConnectivityManager connMgr = (ConnectivityManager) TPNApp.getAppContext()
-//                .getSystemService(Context.CONNECTIVITY_SERVICE);
-//
-//        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-//
-//        if (networkInfo != null && networkInfo.isConnected()) {
-//            return true;
-//        } else if (showMessage) {
-//            Toast.makeText(TPNApp.getAppContext(),
-//                    TPNApp.getAppContext().getString(R.string.hint_networkError),
-//                    Toast.LENGTH_LONG).show();
-//        }
-//        return false;
-//    }
+
+    public static boolean isNetWorkAvailable(Context context) {
+        ConnectivityManager connMgr = (ConnectivityManager) context
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+
+        if (networkInfo != null && networkInfo.isConnected()) {
+            return true;
+        } else {
+            showLongToastMessage(context,context.getResources().getString(R.string.hint_networkError));
+        }
+        return false;
+    }
 }

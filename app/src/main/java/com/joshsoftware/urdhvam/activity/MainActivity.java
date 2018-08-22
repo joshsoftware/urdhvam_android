@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -599,6 +600,14 @@ public class MainActivity extends AppCompatActivity implements MarkerView.Marker
         mEndVisible = true;
 
         updateDisplay();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            }else {
+                checkUserPermission();
+            }
+        }
+
     }
 
 //    private void loadFromFile() {
@@ -1375,12 +1384,16 @@ public class MainActivity extends AppCompatActivity implements MarkerView.Marker
         int timeName = (int) System.currentTimeMillis();
         int tempFileName = Math.abs(timeName);
 
-        if (ActivityCompat.checkSelfPermission(MainActivity.this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+//        if (ActivityCompat.checkSelfPermission(MainActivity.this,
+//                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+//            saveRingtone(""+tempFileName);
+//        } else {
+//            new MyRuntimePermission(MainActivity.this).checkPermissionForExternalStorage();
+//        }
+        if(AppUtils.isNetWorkAvailable(MainActivity.this)){
             saveRingtone(""+tempFileName);
-        } else {
-            new MyRuntimePermission(MainActivity.this).checkPermissionForExternalStorage();
         }
+
     }
 
     private OnClickListener mPlayListener = new OnClickListener() {
@@ -1639,14 +1652,25 @@ public class MainActivity extends AppCompatActivity implements MarkerView.Marker
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 1) {
-            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                onSave();
-            }
-        }
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        if (requestCode == 1) {
+//            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                onSave();
+//            }
+//        }
+//    }
+
+    private void checkUserPermission() {
+        ActivityCompat.requestPermissions(MainActivity.this,
+                new String[]{
+                        Manifest.permission.INTERNET,
+                        Manifest.permission.ACCESS_NETWORK_STATE,
+                        Manifest.permission.ACCESS_WIFI_STATE,
+                        Manifest.permission.RECORD_AUDIO,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                },1);
     }
 
 

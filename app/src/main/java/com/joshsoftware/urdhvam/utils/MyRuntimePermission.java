@@ -22,10 +22,5 @@ public class MyRuntimePermission {
             ActivityCompat.requestPermissions(context, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_EXTERNAL_STORAGE);
         }
 
-//        if (ActivityCompat.shouldShowRequestPermissionRationale(context,Manifest.permission.RECORD_AUDIO)){
-//
-//            ActivityCompat.requestPermissions(context,new String[]{Manifest.permission.RECORD_AUDIO},PERMISSION_RECORD_AUDIO);
-//
-//        }
     }
 }
